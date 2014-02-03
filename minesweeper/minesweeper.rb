@@ -1,12 +1,26 @@
 class Board
   def initialize(row = 9, column = 9)
     @grid = Array.new(row) { Array.new(column, "_") }
+    add_tiles_to_grid
+    plant_bombs
   end
 
   def show
-    @grid.each do |row|
-      p row
+    shown_grid = @grid.dup
+    shown_grid.each_with_index do |row, r_idx|
+      row.each_with_index do |t, c_idx|
+        if t.bomb?
+          shown_grid[r_idx][c_idx] = "_"
+        elsif t.flagged?
+          shown_grid[r_idx][c_idx] = "F"
+        elsif t.revealed?
+          shown_grid[r_idx][c_idx] = t.bomb_count
+        else
+          shown_grid[r_idx][c_idx] = "_"
+        end
+      end
     end
+    shown_grid
   end
 
   def update(location, mark)
@@ -15,10 +29,23 @@ class Board
   end
 
   def add_tiles_to_grid
-
+    @grid.each_with_index do |tile, row|
+      tile.each_with_index do |t, col|
+        @grid[row][col] = Tile.new(false, [row, col], self)
+      end
+    end
   end
 
-
+  def plant_bombs
+    bombs = 0
+    until bombs == 9
+      rand_x = rand(9)
+      rand_Y = rand(9)
+      unless @grid[rand_x][rand_y].bomb?
+        @grid[rand_x][rand_y].bomb = true
+      end
+    end
+  end
 end
 
 class Tile
