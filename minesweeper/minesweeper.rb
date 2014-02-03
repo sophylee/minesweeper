@@ -1,4 +1,5 @@
 require "colorize"
+require "YAML"
 
 class Board
   attr_accessor :grid
@@ -134,13 +135,22 @@ class Game
 
   def play
     until @board.won?
+
       @board.print_grid
+
+      puts "HEY you want to save? (y/n)"
+      save_response = gets.chomp.downcase
+      if save_response == 'y'
+        return self.save
+      end
+
       puts "Enter row number"
       row = gets.chomp.to_i
       puts "Enter col number"
       col = gets.chomp.to_i
       puts "Flag? (y/n)"
       flag = gets.chomp.downcase
+
       if @board.grid[row][col].bomb? && flag != "y"
         puts "you suck"
         return
@@ -152,7 +162,12 @@ class Game
         @board.grid[row][col].reveal
       end
     end
+
     puts "YOU WIN!!!"
+  end
+
+  def save
+    saved_game = self.to_yaml
   end
 
 end
@@ -160,5 +175,24 @@ end
 # new_board = Board.new
 # new_board.print_grid
 
-new_game = Game.new
-new_game.play
+puts "HEY you want to load a saved game? (y/n)"
+load_response = gets.chomp.downcase
+if load_response == 'y'
+  puts "name of load file"
+  load_file = gets.chomp
+  contents = File.read(load_file)
+  game_file = YAML::load(contents)
+  save_file = game_file.play
+else
+  new_game = Game.new
+  save_file = new_game.play
+end
+
+if save_file
+  puts "Name your game:"
+  save_name = gets.chomp
+  puts "saving file #{save_name}"
+  File.open(save_name, "w") do |f|
+    f.puts save_file
+  end
+end
