@@ -20,17 +20,24 @@ class Board
     @grid.each_with_index do |row, r_idx|
       row.each_with_index do |t, c_idx|
         if t.flagged?
-          user_grid[r_idx][c_idx] = "F".red.on_light_blue
+          user_grid[r_idx][c_idx] = "F".red.on_white
         elsif t.bomb? && !t.flagged?
-          user_grid[r_idx][c_idx] = "_".white.on_green
+          user_grid[r_idx][c_idx] = "_".white.on_white
         elsif t.revealed?
-          if t.bomb_count == 0
-            user_grid[r_idx][c_idx] = " ".on_light_blue
+          case t.bomb_count
+          when 0
+            user_grid[r_idx][c_idx] = " ".on_light_white
+          when 1
+            user_grid[r_idx][c_idx] = "1".blue.on_light_white
+          when 2
+            user_grid[r_idx][c_idx] = "2".green.on_light_white
+          when 3
+            user_grid[r_idx][c_idx] = "3".red.on_light_white
           else
-            user_grid[r_idx][c_idx] = t.bomb_count.to_s.white.on_light_blue
+            user_grid[r_idx][c_idx] = t.bomb_count.to_s.red.on_light_white
           end
         else
-          user_grid[r_idx][c_idx] = "_".white.on_green
+          user_grid[r_idx][c_idx] = "_".white.on_white
         end
       end
     end
@@ -195,6 +202,19 @@ class Game
     @time_won = Time.now
     @total_time = @time_won - @time_start
     puts "You WON!!!!!!! It took you #{@total_time.floor} seconds."
+    puts "Leaderboard: "
+    current_leaderboard = File.read("leaderboard")
+    game_file = YAML::load(current_leaderboard)
+    puts game_file
+  end
+
+  def update_leaderboard
+    puts "What's your name champ?"
+    name = gets.chomp
+    File.new("leaderboard") do |f|
+      f.puts ("#{name}: #{@total_time}").to_yaml
+    end
+
   end
 
   # def play
@@ -234,6 +254,12 @@ class Game
     saved_game = self.to_yaml
   end
 
+end
+
+class Leaderboard
+  def initialize
+    File.new("leaderboard")
+  end
 end
 
 # new_board = Board.new
