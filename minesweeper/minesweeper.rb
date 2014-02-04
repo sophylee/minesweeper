@@ -5,7 +5,7 @@ require 'io/console'
 class Board
   attr_accessor :grid
 
-  def initialize(game, row = 9, column = 9)
+  def initialize(game, row = 10, column = 25)
     @grid = Array.new(row) { Array.new(column, "_") }
     @row = row
     @col = column
@@ -20,27 +20,29 @@ class Board
     @grid.each_with_index do |row, r_idx|
       row.each_with_index do |t, c_idx|
         if t.flagged?
-          user_grid[r_idx][c_idx] = "F".red
+          user_grid[r_idx][c_idx] = "F".red.on_light_blue
         elsif t.bomb? && !t.flagged?
-          user_grid[r_idx][c_idx] = "_".white
+          user_grid[r_idx][c_idx] = "_".white.on_green
         elsif t.revealed?
-          user_grid[r_idx][c_idx] = t.bomb_count.to_s
+          if t.bomb_count == 0
+            user_grid[r_idx][c_idx] = " ".on_light_blue
+          else
+            user_grid[r_idx][c_idx] = t.bomb_count.to_s.white.on_light_blue
+          end
         else
-          user_grid[r_idx][c_idx] = "_".white
+          user_grid[r_idx][c_idx] = "_".white.on_green
         end
       end
     end
     current_value = user_grid[@game.cursor_x][@game.cursor_y]
-    user_grid[@game.cursor_x][@game.cursor_y] = current_value.red
+    user_grid[@game.cursor_x][@game.cursor_y] = current_value.on_red
 
     user_grid
   end
 
   def print_grid
-    puts "- 0 1 2 3 4 5 6 7 8".blue
     shown_grid.each_with_index do |row, i|
-      print "#{i} ".blue
-      puts row.map(&:to_s).join(" ")
+      puts row.map(&:to_s).join("")
     end
   end
 
@@ -60,9 +62,10 @@ class Board
 
   def plant_bombs
     bombs = 0
-    until bombs == 9
-      rand_x = rand(9)
-      rand_y = rand(9)
+    number_bombs = 25
+    until bombs == number_bombs
+      rand_x = rand(@row)
+      rand_y = rand(@col)
       unless @grid[rand_x][rand_y].bomb?
         @grid[rand_x][rand_y].bomb = true
         bombs += 1
