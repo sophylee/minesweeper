@@ -1,2 +1,6 @@
 require 'io/console'
-input = STDIN.getch
+input = nil
+until input == "q"
+  input = STDIN.getch
+  p input
+end

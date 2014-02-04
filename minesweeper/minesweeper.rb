@@ -1,33 +1,39 @@
 require "colorize"
 require "YAML"
+require 'io/console'
 
 class Board
   attr_accessor :grid
 
-  def initialize(row = 9, column = 9)
+  def initialize(game, row = 9, column = 9)
     @grid = Array.new(row) { Array.new(column, "_") }
     @row = row
     @col = column
+    @game = game
     add_tiles_to_grid
     plant_bombs
   end
 
   def shown_grid
-    shown_grid = Array.new(@row) { Array.new(@col, "_") }
+    system "clear"
+    user_grid = Array.new(@row) { Array.new(@col, "_") }
     @grid.each_with_index do |row, r_idx|
       row.each_with_index do |t, c_idx|
         if t.flagged?
-          shown_grid[r_idx][c_idx] = "F".red
+          user_grid[r_idx][c_idx] = "F".red
         elsif t.bomb? && !t.flagged?
-          shown_grid[r_idx][c_idx] = "_".white
+          user_grid[r_idx][c_idx] = "_".white
         elsif t.revealed?
-          shown_grid[r_idx][c_idx] = t.bomb_count.to_s
+          user_grid[r_idx][c_idx] = t.bomb_count.to_s
         else
-          shown_grid[r_idx][c_idx] = "_".white
+          user_grid[r_idx][c_idx] = "_".white
         end
       end
     end
-    shown_grid
+    current_value = user_grid[@game.cursor_x][@game.cursor_y]
+    user_grid[@game.cursor_x][@game.cursor_y] = current_value.red
+
+    user_grid
   end
 
   def print_grid
@@ -100,6 +106,10 @@ class Tile
     self.flagged = true
   end
 
+  def unflag
+    self.flagged = false
+  end
+
   def get_neighbors
     neighbors = []
     @board.grid.each do |row|
@@ -129,42 +139,93 @@ class Tile
 end
 
 class Game
+  attr_accessor :cursor_x, :cursor_y
+
   def initialize
-    @board = Board.new
+    @board = Board.new(self)
+    @cursor_location = [0,0]
+    @cursor_x, @cursor_y = @cursor_location
+    @time_start = Time.now
   end
 
   def play
+    valid_keys = ["w", "a", "s", "d", "q", "f"," ", "`"]
+    input = nil
+    @board.print_grid
+    puts "Use WASD keys to move. f to flag, space to play space, ` to save"
     until @board.won?
-
-      @board.print_grid
-
-      puts "HEY you want to save? (y/n)"
-      save_response = gets.chomp.downcase
-      if save_response == 'y'
+      until valid_keys.include?(input)
+        input = STDIN.getch
+      end
+      if input == "`"
         return self.save
-      end
-
-      puts "Enter row number"
-      row = gets.chomp.to_i
-      puts "Enter col number"
-      col = gets.chomp.to_i
-      puts "Flag? (y/n)"
-      flag = gets.chomp.downcase
-
-      if @board.grid[row][col].bomb? && flag != "y"
-        puts "you suck"
+      elsif input == "q"
+        puts "quitting"
         return
-      elsif flag == 'y'
-        puts "flagging #{[row, col]}"
-        @board.grid[row][col].flag
-      else
-        puts "revealing #{[row, col]}"
-        @board.grid[row][col].reveal
+      elsif input == "w" && @cursor_x > 0
+        @cursor_x -= 1
+      elsif input == "a" && @cursor_y > 0
+        @cursor_y -= 1
+      elsif input == "s" && @cursor_x < @board.grid.count - 1
+        @cursor_x += 1
+      elsif input == "d" && @cursor_y < @board.grid.first.count - 1
+        @cursor_y += 1
+      elsif input == "f"
+        if @board.grid[@cursor_x][@cursor_y].flagged?
+          @board.grid[@cursor_x][@cursor_y].unflag
+        else
+          @board.grid[@cursor_x][@cursor_y].flag
+        end
+      elsif input == " "
+        if @board.grid[@cursor_x][@cursor_y].bomb?
+          puts "you suck, loser! BOOM!"
+          return
+        else
+          @board.grid[@cursor_x][@cursor_y].reveal
+        end
       end
+      input = nil
+      @board.print_grid
+      puts "Use WASD keys to move. f to flag, space to play space, ` to save"
     end
-
-    puts "YOU WIN!!!"
+    @board.print_grid
+    @time_won = Time.now
+    @total_time = @time_won - @time_start
+    puts "You WON!!!!!!! It took you #{@total_time.floor} seconds."
   end
+
+  # def play
+#     until @board.won?
+#
+#       @board.print_grid
+#
+#       puts "HEY you want to save? (y/n)"
+#       save_response = gets.chomp.downcase
+#       if save_response == 'y'
+#         return self.save
+#       end
+#
+#       puts "Enter row number"
+#       row = gets.chomp.to_i
+#       puts "Enter col number"
+#       col = gets.chomp.to_i
+#       puts "Flag? (y/n)"
+#       flag = gets.chomp.downcase
+#
+#       if @board.grid[row][col].bomb? && flag != "y"
+#         puts "you suck"
+#         return
+#       elsif flag == 'y'
+#         puts "flagging #{[row, col]}"
+#         @board.grid[row][col].flag
+#       else
+#         puts "revealing #{[row, col]}"
+#         @board.grid[row][col].reveal
+#       end
+#     end
+#
+#     puts "YOU WIN!!!"
+#   end
 
   def save
     saved_game = self.to_yaml
