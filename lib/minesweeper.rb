@@ -103,7 +103,6 @@ class Tile
   def reveal
     return if self.revealed?
     self.revealed = true
-    # @board.update(self.location, self.bomb_count)
 
     self.get_neighbors.each do |neighbor|
       if self.bomb_count == 0
@@ -162,7 +161,7 @@ class Game
     valid_keys = ["w", "a", "s", "d", "q", "f"," ", "`"]
     input = nil
     @board.print_grid
-    puts "Use WASD keys to move. f to flag, space to play space, ` to save"
+    puts "Use wasd to move. f to flag. Space to check square. q to quit. ` to save."
     until @board.won?
       until valid_keys.include?(input)
         input = STDIN.getch
@@ -188,7 +187,7 @@ class Game
         end
       elsif input == " "
         if @board.grid[@cursor_x][@cursor_y].bomb?
-          puts "you suck, loser! BOOM!"
+          puts "BOOM! Game Over."
           return
         else
           @board.grid[@cursor_x][@cursor_y].reveal
@@ -196,59 +195,15 @@ class Game
       end
       input = nil
       @board.print_grid
-      puts "Use WASD keys to move. f to flag, space to play space, ` to save"
+      puts "Use wasd to move. f to flag. Space to check square. q to quit. ` to save."
     end
     @board.print_grid
     @time_won = Time.now
     @total_time = @time_won - @time_start
     puts "You WON!!!!!!! It took you #{@total_time.floor} seconds."
-    puts "Leaderboard: "
-    current_leaderboard = File.read("leaderboard")
-    game_file = YAML::load(current_leaderboard)
-    puts game_file
-  end
-
-  def update_leaderboard
-    puts "What's your name champ?"
     name = gets.chomp
-    File.new("leaderboard") do |f|
-      f.puts ("#{name}: #{@total_time}").to_yaml
-    end
-
+    puts "Leaderboard: #{name} - #{@time_won} seconds"
   end
-
-  # def play
-#     until @board.won?
-#
-#       @board.print_grid
-#
-#       puts "HEY you want to save? (y/n)"
-#       save_response = gets.chomp.downcase
-#       if save_response == 'y'
-#         return self.save
-#       end
-#
-#       puts "Enter row number"
-#       row = gets.chomp.to_i
-#       puts "Enter col number"
-#       col = gets.chomp.to_i
-#       puts "Flag? (y/n)"
-#       flag = gets.chomp.downcase
-#
-#       if @board.grid[row][col].bomb? && flag != "y"
-#         puts "you suck"
-#         return
-#       elsif flag == 'y'
-#         puts "flagging #{[row, col]}"
-#         @board.grid[row][col].flag
-#       else
-#         puts "revealing #{[row, col]}"
-#         @board.grid[row][col].reveal
-#       end
-#     end
-#
-#     puts "YOU WIN!!!"
-#   end
 
   def save
     saved_game = self.to_yaml
@@ -256,16 +211,7 @@ class Game
 
 end
 
-class Leaderboard
-  def initialize
-    File.new("leaderboard")
-  end
-end
-
-# new_board = Board.new
-# new_board.print_grid
-
-puts "HEY you want to load a saved game? (y/n)"
+puts "Do you want to load a saved game? (y/n)"
 load_response = gets.chomp.downcase
 if load_response == 'y'
   puts "name of load file"
